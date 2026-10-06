@@ -1,0 +1,25 @@
+{
+  "name": "@landed/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "SQLite schema, migrations, repositories (Phase 2).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@landed/core": "workspace:*",
+    "@landed/shared": "workspace:*",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.3",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "drizzle-kit": "^0.31.11"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit generate && git diff --exit-code --stat -- migrations && test -z \"$(git ls-files --others --exclude-standard -- migrations)\""
+  }
+}

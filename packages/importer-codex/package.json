@@ -1,0 +1,14 @@
+{
+  "name": "@landed/importer-codex",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Codex rollout importer — the only place Codex-specific parsing lives (Phase 4).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@landed/core": "workspace:*",
+    "@landed/shared": "workspace:*"
+  }
+}

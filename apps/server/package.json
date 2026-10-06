@@ -1,0 +1,31 @@
+{
+  "name": "@landed/server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local API (127.0.0.1) and UI server; becomes the collector daemon in v0.2.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.5",
+    "@landed/brief": "workspace:*",
+    "@landed/core": "workspace:*",
+    "@landed/db": "workspace:*",
+    "@landed/git-index": "workspace:*",
+    "@landed/importer-claude": "workspace:*",
+    "@landed/importer-codex": "workspace:*",
+    "@landed/ingest": "workspace:*",
+    "@landed/insights": "workspace:*",
+    "@landed/loops": "workspace:*",
+    "@landed/outcomes": "workspace:*",
+    "@landed/shared": "workspace:*",
+    "@landed/summarizer": "workspace:*",
+    "@landed/threads": "workspace:*",
+    "fastify": "^5.12.5",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0"
+  }
+}

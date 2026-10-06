@@ -1,0 +1,15 @@
+{
+  "name": "@landed/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vendor-neutral domain model, Zod schemas, provenance, fingerprints.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fingerprint": "./src/fingerprint/index.ts"
+  },
+  "dependencies": {
+    "@landed/shared": "workspace:*",
+    "zod": "^4.6.5"
+  }
+}

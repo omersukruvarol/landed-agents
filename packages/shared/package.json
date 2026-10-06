@@ -1,0 +1,10 @@
+{
+  "name": "@landed/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Isomorphic utilities (ids, canonical JSON). No dependencies on other packages.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

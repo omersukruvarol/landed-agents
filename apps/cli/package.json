@@ -1,0 +1,61 @@
+{
+  "name": "landed-agents",
+  "version": "0.3.0",
+  "description": "Did your AI agents' work actually land? A local-first outcome ledger for Claude Code and Codex.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omersukruvarol/landed-agents.git",
+    "directory": "apps/cli"
+  },
+  "homepage": "https://github.com/omersukruvarol/landed-agents#readme",
+  "bugs": "https://github.com/omersukruvarol/landed-agents/issues",
+  "type": "module",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "ai-agents",
+    "git",
+    "developer-tools",
+    "mcp",
+    "local-first"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "bin": {
+    "landed": "dist/landed.mjs",
+    "landed-agents": "dist/landed.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "prepack": "node build.mjs --release"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.5",
+    "better-sqlite3": "^13.0.3",
+    "fastify": "^5.12.5"
+  },
+  "devDependencies": {
+    "@landed/brief": "workspace:*",
+    "@landed/core": "workspace:*",
+    "@landed/db": "workspace:*",
+    "@landed/git-index": "workspace:*",
+    "@landed/importer-claude": "workspace:*",
+    "@landed/importer-codex": "workspace:*",
+    "@landed/ingest": "workspace:*",
+    "@landed/insights": "workspace:*",
+    "@landed/loops": "workspace:*",
+    "@landed/outcomes": "workspace:*",
+    "@landed/server": "workspace:*",
+    "@landed/shared": "workspace:*",
+    "@landed/summarizer": "workspace:*",
+    "@landed/threads": "workspace:*",
+    "esbuild": "^0.28.2"
+  }
+}

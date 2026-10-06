@@ -1,0 +1,20 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+
+# local data / databases
+*.db
+*.db-wal
+*.db-shm
+
+# spike outputs contain code lines from local repos — never commit
+spike/edits.jsonl
+spike/results.json
+spike/__pycache__/
+
+# Copied into the CLI package by apps/cli/build.mjs
+apps/cli/README.md
+apps/cli/LICENSE
+*.tgz

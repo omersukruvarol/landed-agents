@@ -1,0 +1,15 @@
+{
+  "name": "@landed/outcomes",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Outcome engine: landed / uncommitted / partial / lost / survival (Phase 5).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@landed/core": "workspace:*",
+    "@landed/shared": "workspace:*",
+    "@landed/git-index": "workspace:*"
+  }
+}

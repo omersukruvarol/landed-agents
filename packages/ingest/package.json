@@ -1,0 +1,22 @@
+{
+  "name": "@landed/ingest",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vendor-neutral pipelines: incremental import, outcome computation and analysis (threads, loops, insights).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@landed/core": "workspace:*",
+    "@landed/db": "workspace:*",
+    "@landed/git-index": "workspace:*",
+    "@landed/importer-claude": "workspace:*",
+    "@landed/importer-codex": "workspace:*",
+    "@landed/insights": "workspace:*",
+    "@landed/loops": "workspace:*",
+    "@landed/outcomes": "workspace:*",
+    "@landed/shared": "workspace:*",
+    "@landed/threads": "workspace:*"
+  }
+}

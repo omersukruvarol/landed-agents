@@ -1,0 +1,14 @@
+{
+  "name": "@landed/threads",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Work Thread reconstruction (Phase 8).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@landed/core": "workspace:*",
+    "@landed/shared": "workspace:*"
+  }
+}

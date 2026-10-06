@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f7f6f2;
+  --panel: #ffffff;
+  --panel-2: #f1efe9;
+  --line: #e4e0d6;
+  --ink: #1c1b18;
+  --ink-2: #4a4740;
+  --muted: #7b766b;
+  --accent: #1f6f5c;
+  --accent-ink: #ffffff;
+  --landed: #2f855a;
+  --uncommitted: #b7791f;
+  --partial: #6b5bb5;
+  --lost: #c0473b;
+  --unknown: #9a958a;
+  --warn: #b7791f;
+  --danger: #c0473b;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131310;
+    --panel: #1b1b17;
+    --panel-2: #22221d;
+    --line: #2f2e27;
+    --ink: #f0ede5;
+    --ink-2: #c9c4b8;
+    --muted: #8f897c;
+    --accent: #4fb093;
+    --accent-ink: #0d1f1a;
+    --landed: #59b783;
+    --uncommitted: #d9a441;
+    --partial: #9b8ce0;
+    --lost: #e06c5f;
+    --unknown: #77726a;
+    --warn: #d9a441;
+    --danger: #e06c5f;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-landed: var(--landed);
+  --color-uncommitted: var(--uncommitted);
+  --color-partial: var(--partial);
+  --color-lost: var(--lost);
+  --color-unknown: var(--unknown);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Inter", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

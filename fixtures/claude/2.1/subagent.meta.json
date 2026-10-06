@@ -1,0 +1,6 @@
+{
+  "agentType": "general-purpose",
+  "description": "CANARY_AGENT_DESC",
+  "toolUseId": "toolu_agent1",
+  "spawnDepth": 1
+}

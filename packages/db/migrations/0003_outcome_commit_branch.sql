@@ -1,0 +1,1 @@
+ALTER TABLE `outcomes` ADD `first_commit_branch` text;
