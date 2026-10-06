@@ -1,0 +1,73 @@
+name: Release
+
+# Publishes `landed-agents` to npm when a version tag (v1.2.3) is pushed.
+# Authentication is npm Trusted Publishing (OIDC): no npm token is stored in this repository.
+# One-time setup on npmjs.com → landed-agents → Settings → Trusted Publisher → GitHub Actions:
+#   organization/user: omersukruvarol · repository: landed-agents · workflow: release.yml
+# npm attaches provenance automatically, so each version links back to the commit it was built from.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+  id-token: write # lets the job request the OIDC token npm verifies
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer; Node 22 ships npm 10.
+      - run: npm install -g npm@^11.5.1
+      - run: corepack enable pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Tag matches the package and CLI versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p 'require("./apps/cli/package.json").version')"
+          cli="$(node -e 'const s=require("fs").readFileSync("apps/cli/src/main.ts","utf8");console.log(/export const VERSION = "([^"]+)"/.exec(s)[1])')"
+          echo "tag=$tag package=$pkg cli=$cli"
+          test "$tag" = "$pkg" && test "$tag" = "$cli"
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Migrations match schema
+        run: pnpm --filter @landed/db db:check
+
+      - name: Build web UI and CLI
+        run: pnpm build
+
+      # pnpm pack resolves workspace: versions and runs prepack (which refuses to pack without the
+      # web UI); npm then publishes that exact tarball through OIDC.
+      - name: Pack
+        working-directory: apps/cli
+        run: pnpm pack
+
+      - name: Install the tarball and smoke it
+        working-directory: apps/cli
+        run: |
+          prefix="$(mktemp -d)"
+          npm install -g --prefix "$prefix" "./landed-agents-${GITHUB_REF_NAME#v}.tgz"
+          HOME="$(mktemp -d)" LANDED_DATA_DIR="$(mktemp -d)/data" "$prefix/bin/landed" --version
+
+      - name: Publish to npm
+        working-directory: apps/cli
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # A pre-release (1.2.3-beta.1) goes to the `next` tag, never to `latest`.
+          case "$version" in *-*) tag=next ;; *) tag=latest ;; esac
+          npm publish "./landed-agents-$version.tgz" --access public --tag "$tag"

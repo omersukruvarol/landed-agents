@@ -19,7 +19,7 @@ A local-first outcome ledger for AI coding agents. Landed reads Claude Code and 
 - v0.3-Memory is implemented (phase 20):
   - `landed mcp`, a stdio MCP server with read-only tools: `active_sessions`, `recent_work`, `open_loops`, `prior_attempts`, `resume_packet`;
   - `landed mcp install|remove claude|codex` through each agent's own CLI.
-- Packaging: `landed-agents` 0.3.0 is packable and passes an isolated install test. It is not published yet; publishing is the owner's step (docs/releasing.md). Beta tester guide: docs/beta.md.
+- Packaging: `landed-agents` on npm (0.3.0 was published by hand and staged for npm review). Later releases go through `.github/workflows/release.yml` on a `v*.*.*` tag, using npm Trusted Publishing (OIDC, no token); see docs/releasing.md. Beta tester guide: docs/beta.md.
 - Now: dogfooding (PRD Phase 13), with findings and metrics logged daily in `docs/dogfood.md`. Then the §26 validation gates before v1-Team. Implement phases in order. Each phase leaves lint, typecheck, and tests green.
 
 ## Commands

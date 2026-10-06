@@ -7,44 +7,78 @@ The npm package is `apps/cli`. It contains:
 
 Its only runtime dependencies are `better-sqlite3`, `fastify` and `@fastify/static`. The workspace packages are bundled in.
 
-## Steps
+## How a release works
 
-1. **Bump the version** in `apps/cli/package.json` and `VERSION` in `apps/cli/src/main.ts`. A test fails when the two differ.
-2. **Check:**
+Releases are published by GitHub Actions (`.github/workflows/release.yml`) when a `v*.*.*` tag is pushed.
+- **Authentication:** npm Trusted Publishing (OIDC). There is no npm token anywhere in the repository or its secrets.
+- **Provenance:** npm attaches it automatically, so every version on npmjs.com links to the exact commit and workflow run that built it.
 
-   ```bash
-   pnpm lint && pnpm typecheck && pnpm test
-   ```
+### One-time setup
 
-3. **Build and pack.** `prepack` rebuilds the CLI and refuses to pack without the web UI.
+This is done by the owner on npmjs.com, under **landed-agents → Settings → Trusted Publisher → GitHub Actions**:
 
-   ```bash
-   pnpm build
-   ```
+| Field | Value |
+|---|---|
+| Organization or user | `omersukruvarol` |
+| Repository | `landed-agents` |
+| Workflow filename | `release.yml` |
+| Environment | leave empty |
 
-   ```bash
-   cd apps/cli && pnpm pack
-   ```
+After that, consider setting **Publishing access** to "Require two-factor authentication and disallow tokens". Trusted publishing keeps working with that setting.
 
-4. **Install test** in an isolated home, so nothing touches your machine:
+### Each release
 
-   ```bash
-   T=$(mktemp -d) && npm install -g --prefix "$T/prefix" ./landed-agents-<version>.tgz
-   ```
-
-   ```bash
-   HOME="$T" LANDED_DATA_DIR="$T/data" "$T/prefix/bin/landed" doctor
-   ```
-
-   Then check `scan`, `serve` with `/v1/health`, `mcp`, and `uninstall --yes` the same way. Point `CLAUDE_CONFIG_DIR` and `CODEX_HOME` at fixture copies, or at nothing.
-
-5. **Publish.** This needs your npm account (`npm login`). It is public and cannot be undone after 72 hours.
+1. **Bump the version** in `apps/cli/package.json` and `VERSION` in `apps/cli/src/main.ts`. A unit test fails when the two differ, and the workflow refuses a tag that matches neither.
+2. **Commit and push** to `main`, and wait for CI to pass.
+3. **Tag and push the tag:**
 
    ```bash
-   cd apps/cli && pnpm publish --no-git-checks
+   git tag v0.3.1 && git push origin v0.3.1
    ```
 
-6. **Tag** the commit `v<version>`.
+4. **The workflow then:**
+   - checks the tag against both versions;
+   - runs lint, typecheck, tests and the migration drift check;
+   - builds the web UI and CLI;
+   - packs the tarball;
+   - installs and smokes the tarball;
+   - runs `npm publish` on that exact tarball.
+
+   A pre-release such as `v0.4.0-beta.1` is published under the `next` dist-tag, never `latest`.
+
+A published version cannot be removed after 72 hours, and its number can never be reused. Fix mistakes with a new patch version.
+
+## Local install test (before tagging)
+
+`prepack` rebuilds the CLI and refuses to pack without the web UI.
+
+```bash
+pnpm build
+```
+
+```bash
+cd apps/cli && pnpm pack
+```
+
+Install the tarball in an isolated home, so nothing touches your machine:
+
+```bash
+T=$(mktemp -d) && npm install -g --prefix "$T/prefix" ./landed-agents-<version>.tgz
+```
+
+```bash
+HOME="$T" LANDED_DATA_DIR="$T/data" "$T/prefix/bin/landed" doctor
+```
+
+Then check `scan`, `serve` with `/v1/health`, `mcp`, and `uninstall --yes` the same way. Point `CLAUDE_CONFIG_DIR` and `CODEX_HOME` at fixture copies, or at nothing.
+
+## Manual publish (fallback)
+
+Only if the workflow cannot be used. It needs `npm login`; npm may stage the release for review before it goes live.
+
+```bash
+cd apps/cli && pnpm publish --no-git-checks
+```
 
 ## Notes
 
