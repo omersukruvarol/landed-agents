@@ -34,6 +34,8 @@ export interface SessionItem {
 export interface Loop extends OpenLoop {
   key: string;
   repo?: string;
+  repoRoot?: string;
+  defaultBranch?: string;
   label: string;
   description: string;
   dismissReason?: string;
@@ -155,6 +157,17 @@ export interface OutcomesView {
   unknownReasons: Record<string, number>;
   minComparisonSample: number;
   comparisonCaveat: string;
+}
+
+export interface Summary {
+  days: number;
+  sessions: number;
+  agents: AgentProvider[];
+  repos: number;
+  files: { landed: number; waiting: number; lost: number };
+  running: SessionItem[];
+  openLoops: number;
+  lastScan?: { at: string; durationMs: number };
 }
 
 export interface ThreadDetail {

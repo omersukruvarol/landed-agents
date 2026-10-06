@@ -108,11 +108,12 @@ Registration goes through each agent's own `mcp add` command, and `landed mcp re
 
 ## What it shows
 
-- **Today:** where you left off, open loops, what landed (with commits), what needs attention, and usage with a coverage label.
-- **Open loops:** agent work left dangling (folders such as `output/` and `.planning/`, where agents write reports for you, are excluded; edit the list in Settings). These are uncommitted output, unmerged agent branches, lost work, sessions waiting for your answer, and failures nobody resolved. Each loop can be dismissed, resolved, or copied as resume context to paste into any agent.
-- **Outcomes:** the landed / uncommitted / partial / lost mix, survival of landed work, and edit-to-commit lag. Agents are compared only within one repo and only with at least 30 outcomes each, shown with a 90% interval and a caveat (PRD §12.6).
-- **Threads:** units of work rebuilt across sessions, days and agents, with the reason each session was linked.
-- **Sessions:** the full list with a timeline, files, and each file's outcome.
+The dashboard speaks plain English or Turkish (switch in the header) and shows:
+
+- **Overview:** what your agents did this week, as committed, not committed yet, and lost files; what is waiting for you; and what is running now.
+- **To do:** agent work left dangling (folders such as `output/` and `.planning/`, where agents write reports for you, are excluded; edit the list in Settings). These are uncommitted output, unmerged agent branches, lost work, sessions waiting for your answer, and failures nobody resolved. Each item says what happened, why it matters and what to do. It offers a read-only git command to copy and a handoff to paste into any agent, and can be marked done or not needed.
+- **Projects:** per project, the committed / not committed yet / lost mix, survival of landed work, and edit-to-commit lag. Agents are compared only within one repo and only with at least 30 outcomes each, shown with a 90% interval and a caveat (PRD §12.6).
+- **History:** units of work rebuilt across sessions, days and agents, and every session with a timeline, files and each file's outcome. Sessions that changed no files are hidden unless you ask for them.
 
 Every claim carries a label:
 

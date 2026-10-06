@@ -1,16 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { get } from "../api";
-import {
-  Card,
-  Empty,
-  ErrorBox,
-  Loading,
-  Mono,
-  OutcomeBadge,
-  ProvenanceChip,
-  Status,
-} from "../components/ui";
+import { Card, Empty, ErrorBox, Loading, Mono, OutcomeBadge, Status } from "../components/ui";
 import { agentName, dateTime, short, time, tokens } from "../format";
+import { useI18n } from "../i18n";
 import { Link } from "../router";
 import type { SessionDetail } from "../types";
 
@@ -24,7 +16,12 @@ const TYPE_COLOR: Record<string, string> = {
   "prompt.submitted": "text-ink",
 };
 
+/** Event types whose label is a name worth keeping (the command or tool that ran). */
+const NAMED = new Set(["command.completed", "command.failed", "tool.completed", "tool.failed"]);
+
+/** One conversation with an agent: the files it changed and what it did, in order. */
 export function SessionDetailPage({ id }: { id: string }) {
+  const { t, lang } = useI18n();
   const data = useQuery({
     queryKey: ["session", id],
     queryFn: () => get<SessionDetail>(`/v1/sessions/${id}`),
@@ -34,12 +31,17 @@ export function SessionDetailPage({ id }: { id: string }) {
   const d = data.data as SessionDetail;
   const s = d.session;
   const m = d.meta;
+  const eventLabel = (type: string, label: string) => {
+    const base = t.session.events[type];
+    if (!base) return label;
+    return NAMED.has(type) ? `${base}: ${label}` : base;
+  };
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <div className="text-xs text-muted">
-          <Link to="/sessions" className="hover:underline">
-            Sessions
+          <Link to="/history?tab=sessions" className="hover:underline">
+            {t.thread.crumb}
           </Link>
           {d.thread && (
             <>
@@ -50,27 +52,26 @@ export function SessionDetailPage({ id }: { id: string }) {
             </>
           )}
         </div>
-        <h1 className="mt-1 flex items-center gap-2 text-xl font-semibold tracking-tight">
-          {s.title ?? "Untitled session"}{" "}
-          {m.titleProvenance && <ProvenanceChip value={m.titleProvenance as never} />}
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          {s.title ?? t.history.untitled}
         </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted">
-          <Status value={s.status} />
+        <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted">
+          <Status value={s.live ? "running" : s.status} />
           <span>{agentName(s.provider)}</span>
           {m.model && <span>{String(m.model)}</span>}
-          <span>{s.repo ?? "no repo"}</span>
+          <span>{s.repo ?? t.common.noRepo}</span>
           {m.gitBranchEnd && <Mono>{String(m.gitBranchEnd)}</Mono>}
           <span>
-            {dateTime(s.startedAt)} → {time(s.lastEventAt)}
+            {dateTime(s.startedAt, lang)} → {time(s.lastEventAt, lang)}
           </span>
         </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-5">
         <div className="space-y-5 lg:col-span-2">
-          <Card title={`Files · ${d.files.length}`} aside={<ProvenanceChip value="derived" />}>
+          <Card title={`${t.session.filesTitle} · ${d.files.length}`}>
             {d.files.length === 0 ? (
-              <Empty title="No file edits in this session" />
+              <Empty title={t.session.noFiles} />
             ) : (
               <ul className="space-y-2">
                 {d.files.map((f) => (
@@ -80,31 +81,17 @@ export function SessionDetailPage({ id }: { id: string }) {
                       {f.outcome && <OutcomeBadge cls={f.outcome.class} />}
                     </div>
                     <div className="text-[11px] text-muted">
-                      {f.edits} edits · +{f.added} −{f.removed}
+                      {t.session.edits(f.edits, f.added, f.removed)}
                       {f.outcome?.firstCommit &&
-                        ` · in ${short(f.outcome.firstCommit.sha)}${f.outcome.firstCommit.subject ? ` “${f.outcome.firstCommit.subject}”` : ""}`}
+                        ` · ${t.session.inCommit(short(f.outcome.firstCommit.sha), f.outcome.firstCommit.subject)}`}
                     </div>
                   </li>
                 ))}
               </ul>
             )}
           </Card>
-          <Card title="Usage" aside={<span>coverage: {String(m.usageCoverage ?? "none")}</span>}>
-            <dl className="grid grid-cols-3 gap-2 text-center">
-              {[
-                ["Input", m.inputTokens],
-                ["Cached", m.cachedInputTokens],
-                ["Output", m.outputTokens],
-              ].map(([k, v]) => (
-                <div key={k as string}>
-                  <dt className="text-xs text-muted">{k}</dt>
-                  <dd className="tabular font-semibold">{tokens(v as number | undefined)}</dd>
-                </div>
-              ))}
-            </dl>
-          </Card>
           {d.insights.length > 0 && (
-            <Card title="Insights">
+            <Card title={t.session.insightsTitle}>
               <ul className="space-y-1.5 text-sm">
                 {d.insights.map((i) => (
                   <li key={i.id} className="flex items-start gap-2">
@@ -116,12 +103,12 @@ export function SessionDetailPage({ id }: { id: string }) {
             </Card>
           )}
           {d.subagents.length > 0 && (
-            <Card title={`Subagents · ${d.subagents.length}`}>
+            <Card title={t.session.subagentsTitle(d.subagents.length)}>
               <ul className="space-y-1 text-sm">
                 {d.subagents.map((x) => (
                   <li key={x.id} className="flex justify-between gap-2">
                     <Link to={`/sessions/${x.id}`} className="truncate hover:underline">
-                      {x.title ?? `${agentName(x.provider)} subagent`}
+                      {x.title ?? t.session.helper(agentName(x.provider))}
                     </Link>
                     <Status value={x.status} />
                   </li>
@@ -129,15 +116,30 @@ export function SessionDetailPage({ id }: { id: string }) {
               </ul>
             </Card>
           )}
+          <Card
+            title={t.session.usageTitle}
+            aside={<span>{t.session.coverage(String(m.usageCoverage ?? "none"))}</span>}
+          >
+            <dl className="grid grid-cols-3 gap-2 text-center">
+              {(
+                [
+                  [t.session.usage.input, m.inputTokens],
+                  [t.session.usage.cached, m.cachedInputTokens],
+                  [t.session.usage.output, m.outputTokens],
+                ] as const
+              ).map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-xs text-muted">{k}</dt>
+                  <dd className="tabular font-semibold">{tokens(v as number | undefined)}</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
         </div>
 
-        <Card
-          title="Timeline"
-          className="lg:col-span-3"
-          aside={<ProvenanceChip value="observed" />}
-        >
+        <Card title={t.session.timelineTitle} className="lg:col-span-3">
           {d.timeline.length === 0 ? (
-            <Empty title="No events" />
+            <Empty title={t.session.noEvents} />
           ) : (
             <ol className="relative space-y-1.5 border-l border-line pl-4">
               {d.timeline.map((e) => (
@@ -147,20 +149,20 @@ export function SessionDetailPage({ id }: { id: string }) {
                     aria-hidden
                   />
                   <div className="flex items-baseline gap-2">
-                    <span className="tabular w-16 shrink-0 whitespace-nowrap text-[11px] text-muted">
-                      {time(e.at)}
+                    <span className="tabular w-12 shrink-0 whitespace-nowrap text-[11px] text-muted">
+                      {time(e.at, lang)}
                     </span>
                     <span className={`font-medium ${TYPE_COLOR[e.type] ?? "text-ink-2"}`}>
-                      {e.label}
+                      {eventLabel(e.type, e.label)}
                       {e.count > 1 && <span className="font-normal text-muted"> ×{e.count}</span>}
                       {e.status === "failure" && (
-                        <span className="ml-1 text-xs font-normal text-danger">failed</span>
+                        <span className="ml-1 text-xs font-normal text-danger">
+                          {t.session.failed}
+                        </span>
                       )}
                     </span>
                   </div>
-                  {e.detail && (
-                    <Mono className="ml-[4.5rem] block truncate text-muted">{e.detail}</Mono>
-                  )}
+                  {e.detail && <Mono className="ml-14 block truncate text-muted">{e.detail}</Mono>}
                 </li>
               ))}
             </ol>

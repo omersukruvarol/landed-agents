@@ -1,75 +1,105 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import { get } from "../api";
+import { LoopCard } from "../components/LoopCard";
 import {
-  Button,
   Card,
+  CopyButton,
+  Empty,
   ErrorBox,
   Loading,
   Mono,
   OutcomeBadge,
-  ProvenanceChip,
+  OutcomeTiles,
   Status,
+  splitOutcomes,
 } from "../components/ui";
-import { agentName, dateTime, short } from "../format";
+import { agentList, agentName, dateTime, short } from "../format";
+import { useI18n } from "../i18n";
 import { Link } from "../router";
-import type { ThreadDetail } from "../types";
+import type { Distribution, ThreadDetail } from "../types";
 
-const LINK_TEXT: Record<string, string> = {
-  continuation: "subagent of",
-  "same-branch": "same branch as",
-  "file-overlap": "edited the same files as",
-  "line-overlap": "changed lines added by",
-};
-
+/** One piece of work: its sessions, what happened to each file, and anything still open. */
 export function ThreadDetailPage({ id }: { id: string }) {
+  const { t, lang } = useI18n();
   const data = useQuery({
     queryKey: ["thread", id],
     queryFn: () => get<ThreadDetail>(`/v1/threads/${id}`),
   });
-  const [copied, setCopied] = useState(false);
   if (data.isLoading) return <Loading />;
   if (data.error) return <ErrorBox error={data.error} />;
   const d = data.data as ThreadDetail;
-  const t = d.thread;
+  const th = d.thread;
   const names = new Map(d.sessions.map((s, i) => [s.id, `#${i + 1}`]));
-  const copy = async () => {
-    await navigator.clipboard.writeText(await get<string>(`/v1/threads/${id}/resume`));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+  const files = d.outcomes.filter((o) => o.class !== "unknown");
+  const mix: Distribution = {};
+  for (const o of files) mix[o.class] = (mix[o.class] ?? 0) + 1;
+  const open = d.loops.filter((l) => l.state === "open");
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className="text-xs text-muted">
-            <Link to="/threads" className="hover:underline">
-              Threads
+            <Link to="/history" className="hover:underline">
+              {t.thread.crumb}
             </Link>{" "}
-            / {t.repo}
+            / {th.repo}
           </div>
-          <h1 className="mt-1 flex items-center gap-2 text-xl font-semibold tracking-tight">
-            {t.title} <ProvenanceChip value={t.titleProvenance} />
-          </h1>
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted">
-            <Status value={t.status} />
-            <span>{t.providers.map(agentName).join(" + ")}</span>
-            {t.branch && <Mono>{t.branch}</Mono>}
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{th.title}</h1>
+          <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted">
+            <Status value={th.status} />
+            <span>{agentList(th.providers, t.common.and)}</span>
+            {th.branch && <Mono>{th.branch}</Mono>}
             <span>
-              {dateTime(t.startedAt)} → {dateTime(t.lastActivityAt)}
+              {dateTime(th.startedAt, lang)} → {dateTime(th.lastActivityAt, lang)}
             </span>
           </div>
         </div>
-        <Button onClick={copy} title="A plain-text handoff for continuing this work in any agent">
-          {copied ? "Copied" : "Copy resume context"}
-        </Button>
+        <CopyButton
+          kind="primary"
+          text={() => get<string>(`/v1/threads/${id}/resume`)}
+          title={t.loop.handoffHelp}
+        >
+          {t.thread.handoff}
+        </CopyButton>
       </div>
 
+      {files.length > 0 && <OutcomeTiles {...splitOutcomes(mix)} />}
+
+      {open.length > 0 && (
+        <div className="space-y-3">
+          {open.map((l) => (
+            <LoopCard key={l.id} loop={l} />
+          ))}
+        </div>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-5">
-        <Card title={`Sessions · ${d.sessions.length}`} className="lg:col-span-3">
-          <ol className="space-y-2">
+        <Card title={t.thread.filesTitle} className="lg:col-span-3">
+          {files.length === 0 ? (
+            <Empty title={t.thread.noFiles} />
+          ) : (
+            <ul className="space-y-2">
+              {files.map((o) => (
+                <li key={o.id} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <Mono className="block truncate">{o.relPath}</Mono>
+                    {o.firstCommit && (
+                      <div className="truncate text-[11px] text-muted">
+                        {t.session.inCommit(short(o.firstCommit.sha), o.firstCommit.subject)}
+                      </div>
+                    )}
+                  </div>
+                  <OutcomeBadge cls={o.class} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card title={`${t.thread.sessionsTitle} · ${d.sessions.length}`} className="lg:col-span-2">
+          <ol className="space-y-2.5">
             {d.sessions.map((s) => {
-              const ev = t.linkEvidence.find((l) => l.toSessionId === s.id);
+              const ev = th.linkEvidence.find((l) => l.toSessionId === s.id);
               return (
                 <li key={s.id} className="flex items-start justify-between gap-3 text-sm">
                   <div className="min-w-0">
@@ -77,33 +107,17 @@ export function ThreadDetailPage({ id }: { id: string }) {
                       {names.get(s.id)} {s.title ?? agentName(s.provider)}
                     </Link>
                     <div className="text-xs text-muted">
-                      {agentName(s.provider)} · {dateTime(s.startedAt)} · {s.changedFileCount} files
+                      {agentName(s.provider)} · {dateTime(s.startedAt, lang)} ·{" "}
+                      {t.common.files(s.changedFileCount)}
                       {ev &&
-                        ` · ${LINK_TEXT[ev.kind] ?? ev.kind} ${names.get(ev.fromSessionId) ?? "an earlier session"}`}
+                        ` · ${t.thread.linkWhy[ev.kind] ?? ev.kind} ${names.get(ev.fromSessionId) ?? t.thread.earlier}`}
                     </div>
                   </div>
-                  <Status value={s.status} />
+                  <Status value={s.live ? "running" : s.status} />
                 </li>
               );
             })}
           </ol>
-        </Card>
-        <Card title="Files" className="lg:col-span-2" aside={<ProvenanceChip value="derived" />}>
-          <ul className="space-y-1.5">
-            {d.outcomes
-              .filter((o) => o.class !== "unknown")
-              .map((o) => (
-                <li key={o.id} className="flex items-center justify-between gap-2">
-                  <Mono className="truncate">{o.relPath}</Mono>
-                  <span className="flex shrink-0 items-center gap-2">
-                    {o.firstCommit && (
-                      <Mono className="text-muted">{short(o.firstCommit.sha)}</Mono>
-                    )}
-                    <OutcomeBadge cls={o.class} />
-                  </span>
-                </li>
-              ))}
-          </ul>
         </Card>
       </div>
     </div>

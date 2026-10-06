@@ -106,6 +106,35 @@ export function todayView(db: LandedDb, date?: string) {
   };
 }
 
+/**
+ * The home page: what agents did over the last `days` days, in counts a person can read. Files
+ * are session × file outcomes of sessions active in the window (subagents included).
+ */
+export function summaryView(db: LandedDb, days = 7, now = Date.now()) {
+  const from = new Date(now - days * 86_400_000).toISOString();
+  const names = repoNames(db);
+  const active = listSessions(db, { ...ALL, activeFrom: from });
+  const ids = new Set(active.map((s) => s.id));
+  const files = { landed: 0, waiting: 0, lost: 0 };
+  for (const o of listOutcomes(db, { scope: "session-file" })) {
+    if (!ids.has(o.sessionId)) continue;
+    if (o.class === "landed") files.landed++;
+    else if (o.class === "uncommitted" || o.class === "partial") files.waiting++;
+    else if (o.class === "lost") files.lost++;
+  }
+  const topLevel = active.filter((s) => !s.parentSessionId);
+  return {
+    days,
+    sessions: topLevel.length,
+    agents: [...new Set(topLevel.map((s) => s.provider))],
+    repos: new Set(active.map((s) => s.repoId).filter(Boolean)).size,
+    files,
+    running: topLevel.filter((s) => isLive(s, now)).map((s) => toListItem(s, names, 0)),
+    openLoops: listOpenLoops(db, { state: "open" }).length,
+    lastScan: getSetting<{ at: string; durationMs: number }>(db, "lastScan"),
+  };
+}
+
 export interface SessionListItem {
   id: string;
   provider: AgentSession["provider"];
@@ -152,6 +181,8 @@ export function sessionsView(
     limit?: number;
     offset?: number;
     subagents?: boolean;
+    /** Only sessions that changed at least one file. */
+    withFiles?: boolean;
   },
 ) {
   const names = repoNames(db);
@@ -167,7 +198,9 @@ export function sessionsView(
   for (const s of all)
     if (s.parentSessionId)
       subCount.set(s.parentSessionId, (subCount.get(s.parentSessionId) ?? 0) + 1);
-  const visible = q.subagents ? all : all.filter((s) => !s.parentSessionId);
+  const visible = all.filter(
+    (s) => (q.subagents || !s.parentSessionId) && (!q.withFiles || s.changedFileCount > 0),
+  );
   const offset = q.offset ?? 0;
   const items: SessionListItem[] = visible
     .slice(offset, offset + (q.limit ?? 100))
@@ -441,12 +474,17 @@ const total = (d: Partial<Record<OutcomeClass, number>>) =>
 
 export function loopsView(db: LandedDb, state?: OpenLoop["state"]) {
   const names = repoNames(db);
+  const repos = new Map(listRepos(db).map((r) => [r.id, r]));
   return listOpenLoops(db, state ? { state } : {})
     .map((l) => {
       const repo = l.repoId ? names.get(l.repoId) : undefined;
+      const row = l.repoId ? repos.get(l.repoId) : undefined;
       return {
         ...l,
         ...(repo ? { repo } : {}),
+        // For the dashboard's "copy command" action (local UI; the API is loopback-only).
+        ...(row ? { repoRoot: row.rootPath } : {}),
+        ...(row?.defaultBranch ? { defaultBranch: row.defaultBranch } : {}),
         label: loopLabel(l.type),
         description: describeLoop({ ...l, ...(repo ? { repo } : {}) }),
       };
@@ -483,7 +521,7 @@ export function threadDetail(db: LandedDb, id: string) {
     thread: { ...t, repo: names.get(t.repoId) ?? "unknown" },
     sessions: sessions.map((s) => toListItem(s, names, 0)),
     outcomes,
-    loops: listOpenLoops(db).filter((l) => l.threadId === id),
+    loops: loopsView(db).filter((l) => l.threadId === id),
   };
 }
 

@@ -41,6 +41,7 @@ import {
   reportView,
   sessionDetail,
   sessionsView,
+  summaryView,
   threadDetail,
   threadsView,
   todayView,
@@ -182,6 +183,10 @@ export async function createServer(
   });
 
   app.get("/v1/health", async () => ({ ok: true }));
+  app.get<{ Querystring: { days?: string } }>("/v1/summary", async (req) => {
+    const days = Number(req.query.days ?? 7);
+    return summaryView(db, Number.isFinite(days) && days > 0 && days <= 365 ? days : 7);
+  });
   app.get<{ Querystring: { date?: string } }>("/v1/today", async (req) =>
     todayView(db, req.query.date),
   );
@@ -196,6 +201,7 @@ export async function createServer(
       limit: Math.min(Number(q.limit ?? 100), 500),
       offset: Number(q.offset ?? 0),
       subagents: q.subagents === "1",
+      withFiles: q.withFiles === "1",
     });
   });
   app.get<{ Params: { id: string } }>(

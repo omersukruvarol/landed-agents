@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { useI18n } from "./i18n";
 import type { LiveMessage } from "./types";
 
 interface LiveState {
@@ -82,12 +83,10 @@ export function LiveProvider({ children }: { children: ReactNode }) {
 
 export function LiveIndicator() {
   const { connected, live } = useLive();
-  const label = !connected ? "Offline" : live ? "Live" : "Connected";
-  const help = !connected
-    ? "Not connected to the Landed server"
-    : live
-      ? "Watching agent history; updates appear within seconds"
-      : "Showing the last scan; run `landed start` for live updates";
+  const { t } = useI18n();
+  const h = t.header;
+  const label = !connected ? h.offline : live ? h.live : h.connected;
+  const help = !connected ? h.offlineHelp : live ? h.liveHelp : h.connectedHelp;
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted" title={help}>
       <span
@@ -101,6 +100,7 @@ export function LiveIndicator() {
 
 export function Toasts() {
   const { notices, dismiss } = useLive();
+  const { t } = useI18n();
   if (!notices.length) return null;
   return (
     <div
@@ -116,7 +116,7 @@ export function Toasts() {
               type="button"
               onClick={() => dismiss(n.id)}
               className="text-muted hover:text-ink"
-              aria-label="Dismiss"
+              aria-label={t.toast.dismiss}
             >
               ×
             </button>
@@ -127,7 +127,7 @@ export function Toasts() {
               href={`/sessions/${n.detail.sessionId}`}
               className="mt-1 inline-block text-xs text-accent hover:underline"
             >
-              Open session →
+              {t.toast.open}
             </a>
           )}
         </div>

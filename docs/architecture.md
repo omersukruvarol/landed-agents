@@ -317,7 +317,15 @@ These are pure functions over stored sessions, patches and session-file outcomes
 ## Web (`apps/web`)
 
 - **Stack:** React 19, Vite, Tailwind 4 and TanStack Query, with a tiny history router.
-- **Pages:** Today, Open loops, Outcomes, Threads (and detail), Sessions (and detail), Settings.
+- **Pages:**
+  - Overview (`/`): the week in plain counts from `/v1/summary`, the top items waiting for you, what is running now, and recent work.
+  - To do (`/loops`), Projects (`/outcomes`), History (`/history`, with tabs for work and sessions; `/threads` and `/sessions` still route there), work and session detail, and Settings.
+- **Plain language, English and Turkish** (`src/i18n.tsx`):
+  - Every visible string lives in one typed dictionary per language. `tr` is typed as `typeof en`, so a missing translation fails typecheck.
+  - The language comes from the saved choice, then the browser language. It can be changed in the header and in Settings.
+  - Screens say "not committed yet" rather than "uncommitted", and every to-do card states what happened, why it matters and what to do.
+  - Loop sentences are built on the client from structured fields (type, size, branch, repo), not from server prose.
+  - Turkish copy avoids suffixes after names and numbers ("EmojiTalks: 180 dosya …", "commit'lenen: %90"), so vowel harmony never breaks.
 - **Theming:** colors are CSS variables with a dark mode. Status is always shown with text and an icon, never color alone.
 - **Typechecking:** the app has its own `tsconfig.json` (DOM and JSX), checked by `pnpm typecheck`.
 

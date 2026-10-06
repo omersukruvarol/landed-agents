@@ -157,6 +157,21 @@ describe("local server", () => {
     expect(report.body).not.toContain("secret-client-repo");
   });
 
+  it("summarizes the week in plain counts for the home page", async () => {
+    const { app } = await setup();
+    const sum = (await app.inject({ url: "/v1/summary?days=7", headers: host })).json();
+    expect(sum).toMatchObject({
+      days: 7,
+      sessions: 1,
+      agents: ["codex"],
+      repos: 1,
+      files: { landed: 1, waiting: 0, lost: 0 },
+      openLoops: 1,
+    });
+    const loops = (await app.inject({ url: "/v1/loops?state=open", headers: host })).json();
+    expect(loops[0].repoRoot).toBe("/Users/dev/secret-client-repo");
+  });
+
   it("saves loop exclusions with the token, normalized, and re-checks loops", async () => {
     const { app } = await setup();
     const url = "/v1/settings/loops";
