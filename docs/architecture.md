@@ -326,6 +326,10 @@ These are pure functions over stored sessions, patches and session-file outcomes
   - Screens say "not committed yet" rather than "uncommitted", and every to-do card states what happened, why it matters and what to do.
   - Loop sentences are built on the client from structured fields (type, size, branch, repo), not from server prose.
   - Turkish copy avoids suffixes after names and numbers ("EmojiTalks: 180 dosya …", "commit'lenen: %90"), so vowel harmony never breaks.
+- **Notifications in the same language:**
+  - Notices carry structured fields (`repo`, `sessionTitle`, `relPath`).
+  - The dashboard words its toasts from them on the client.
+  - The server words macOS notifications with `noticeText()` in the `language` setting. The dashboard keeps that setting in step through `PUT /v1/settings/language`. Until it is set, the system locale decides; under launchd that is usually English.
 - **Theming:** colors are CSS variables with a dark mode. Status is always shown with text and an icon, never color alone.
 - **Typechecking:** the app has its own `tsconfig.json` (DOM and JSX), checked by `pnpm typecheck`.
 

@@ -108,30 +108,45 @@ export function Toasts() {
       role="status"
       aria-live="polite"
     >
-      {notices.map((n) => (
-        <div key={n.id} className="rounded-lg border border-line bg-panel p-3 text-sm shadow-lg">
-          <div className="flex items-start justify-between gap-2">
-            <span className="font-medium">{n.detail?.title}</span>
-            <button
-              type="button"
-              onClick={() => dismiss(n.id)}
-              className="text-muted hover:text-ink"
-              aria-label={t.toast.dismiss}
-            >
-              ×
-            </button>
+      {notices.map((n) => {
+        const d = n.detail ?? {};
+        const awaiting = d.kind === "awaiting-user";
+        const collision = d.kind === "collision";
+        const title = awaiting
+          ? t.notice.awaitingTitle
+          : collision
+            ? t.notice.collisionTitle
+            : d.title;
+        const message = awaiting
+          ? t.notice.awaiting(d.repo, d.sessionTitle)
+          : collision
+            ? t.notice.collision(d.repo, d.relPath)
+            : d.message;
+        return (
+          <div key={n.id} className="rounded-lg border border-line bg-panel p-3 text-sm shadow-lg">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-medium">{title}</span>
+              <button
+                type="button"
+                onClick={() => dismiss(n.id)}
+                className="text-muted hover:text-ink"
+                aria-label={t.toast.dismiss}
+              >
+                ×
+              </button>
+            </div>
+            <p className="mt-0.5 text-xs text-ink-2">{message}</p>
+            {n.detail?.sessionId && (
+              <a
+                href={`/sessions/${n.detail.sessionId}`}
+                className="mt-1 inline-block text-xs text-accent hover:underline"
+              >
+                {t.toast.open}
+              </a>
+            )}
           </div>
-          <p className="mt-0.5 text-xs text-ink-2">{n.detail?.message}</p>
-          {n.detail?.sessionId && (
-            <a
-              href={`/sessions/${n.detail.sessionId}`}
-              className="mt-1 inline-block text-xs text-accent hover:underline"
-            >
-              {t.toast.open}
-            </a>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -122,6 +122,11 @@ describe("live collector", () => {
       );
       await until(() => notices.some((n) => n.kind === "collision"));
       expect(notices.find((n) => n.kind === "collision")?.message).toContain("src/retry.ts");
+      // Structured fields let each surface word the notice in the user's language.
+      expect(notices.find((n) => n.kind === "collision")).toMatchObject({
+        relPath: "src/retry.ts",
+        repo: "app",
+      });
 
       // Nothing new: touching a file again must not repeat notices.
       live.touch(join(project, `${AWAIT}.jsonl`));

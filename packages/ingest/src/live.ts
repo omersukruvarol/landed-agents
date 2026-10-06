@@ -24,13 +24,21 @@ export interface LiveEvent {
   detail?: Record<string, unknown>;
 }
 
-/** A desktop-worthy moment. Built from metadata only: repo names, file paths, titles. */
+/**
+ * A desktop-worthy moment. Built from metadata only: repo names, file paths, titles. The fields
+ * let each surface word it in the user's language; `title` and `message` are the English default.
+ */
 export interface Notice {
   kind: "awaiting-user" | "collision";
   key: string;
   title: string;
   message: string;
   sessionId?: string;
+  repo?: string;
+  /** awaiting-user: the session's title, when known. */
+  sessionTitle?: string;
+  /** collision: the repo-relative file both sessions edited. */
+  relPath?: string;
 }
 
 export interface LiveOptions {
@@ -112,15 +120,18 @@ export function createLiveCollector(opts: LiveOptions): LiveCollector {
       limit: 10_000,
     });
     const repoName = (id?: string) =>
-      id ? basename(getRepo(opts.db, id)?.rootPath ?? "") || "a repo" : "a repo";
+      id ? basename(getRepo(opts.db, id)?.rootPath ?? "") || undefined : undefined;
     for (const s of recent) {
       if (s.status !== "awaiting-user") continue;
+      const repo = repoName(s.repoId);
       out.push({
         kind: "awaiting-user",
         key: `awaiting-user:${s.id}:${s.lastEventAt}`,
         title: "An agent is waiting for you",
-        message: `${s.title ?? "A session"} in ${repoName(s.repoId)} needs your answer or approval.`,
+        message: `${s.title ?? "A session"} in ${repo ?? "a repo"} needs your answer or approval.`,
         sessionId: s.id,
+        ...(repo ? { repo } : {}),
+        ...(s.title ? { sessionTitle: s.title } : {}),
       });
     }
     const ids = new Set(recent.map((s) => s.id));
@@ -129,12 +140,15 @@ export function createLiveCollector(opts: LiveOptions): LiveCollector {
     );
     for (const c of detectCollisions({ sessions: recent, patches, outcomes: [] })) {
       if (c.kind !== "concurrent-edit" && c.kind !== "overwrite") continue;
+      const repo = repoName(c.repoId);
       out.push({
         kind: "collision",
         key: `collision:${c.key}`,
         title: "Two agents are editing the same file",
-        message: `${c.relPath} in ${repoName(c.repoId)} was edited by two sessions within an hour.`,
+        message: `${c.relPath} in ${repo ?? "a repo"} was edited by two sessions within an hour.`,
         sessionId: c.sessionB,
+        relPath: c.relPath,
+        ...(repo ? { repo } : {}),
       });
     }
     return out;
@@ -151,6 +165,9 @@ export function createLiveCollector(opts: LiveOptions): LiveCollector {
         title: n.title,
         message: n.message,
         ...(n.sessionId ? { sessionId: n.sessionId } : {}),
+        ...(n.repo ? { repo: n.repo } : {}),
+        ...(n.sessionTitle ? { sessionTitle: n.sessionTitle } : {}),
+        ...(n.relPath ? { relPath: n.relPath } : {}),
       });
     }
   };

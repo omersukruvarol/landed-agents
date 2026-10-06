@@ -1,4 +1,5 @@
-import { createContext, type ReactNode, useContext, useState } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { send } from "./api";
 
 /**
  * Plain-language copy in English and Turkish. Every screen speaks in sentences a non-specialist
@@ -372,6 +373,14 @@ const en = {
     approximate: "approximate",
   },
   toast: { open: "Open →", dismiss: "Dismiss" },
+  notice: {
+    awaitingTitle: "An agent is waiting for you",
+    awaiting: (repo?: string, title?: string) =>
+      `${repo ? `${repo}: ` : ""}${title ? `“${title}”` : "A session"} needs your answer or approval.`,
+    collisionTitle: "Two agents are editing the same file",
+    collision: (repo?: string, file?: string) =>
+      `${repo ? `${repo}: ` : ""}${file ?? "A file"} was edited by two sessions within an hour.`,
+  },
 };
 
 const tr: typeof en = {
@@ -730,6 +739,14 @@ const tr: typeof en = {
     approximate: "yaklaşık",
   },
   toast: { open: "Aç →", dismiss: "Kapat" },
+  notice: {
+    awaitingTitle: "Bir ajan seni bekliyor",
+    awaiting: (repo, title) =>
+      `${repo ? `${repo}: ` : ""}${title ? `“${title}” oturumu` : "Bir oturum"} cevabını ya da onayını bekliyor.`,
+    collisionTitle: "İki ajan aynı dosyayı düzenliyor",
+    collision: (repo, file) =>
+      `${repo ? `${repo}: ` : ""}${file ?? "Bir dosya"} son bir saat içinde iki ayrı oturum tarafından düzenlendi.`,
+  },
 };
 
 export type Dict = typeof en;
@@ -763,5 +780,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(KEY, l);
     } catch {}
   };
+  // Desktop notifications are written by the server; keep its language in step with this page.
+  useEffect(() => {
+    send("PUT", "/v1/settings/language", { lang }).catch(() => {});
+  }, [lang]);
   return <Ctx.Provider value={{ lang, t: DICTS[lang], setLang }}>{children}</Ctx.Provider>;
 }

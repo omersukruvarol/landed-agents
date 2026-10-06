@@ -172,6 +172,22 @@ describe("local server", () => {
     expect(loops[0].repoRoot).toBe("/Users/dev/secret-client-repo");
   });
 
+  it("stores the dashboard language for server-written text", async () => {
+    const { app } = await setup();
+    const url = "/v1/settings/language";
+    const auth = { ...host, "x-landed-token": "test-token" };
+    expect(
+      (await app.inject({ method: "PUT", url, headers: host, payload: { lang: "tr" } })).statusCode,
+    ).toBe(401);
+    expect(
+      (await app.inject({ method: "PUT", url, headers: auth, payload: { lang: "de" } })).statusCode,
+    ).toBe(400);
+    expect(
+      (await app.inject({ method: "PUT", url, headers: auth, payload: { lang: "tr" } })).json(),
+    ).toEqual({ lang: "tr" });
+    expect((await app.inject({ url: "/v1/settings", headers: host })).json().language).toBe("tr");
+  });
+
   it("saves loop exclusions with the token, normalized, and re-checks loops", async () => {
     const { app } = await setup();
     const url = "/v1/settings/loops";

@@ -32,7 +32,14 @@ import { createCommandSummarizer } from "@landed/summarizer";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { Hub } from "./hub";
 import { resumeContext } from "./memory";
-import { DEFAULT_NOTIFICATIONS, type NotificationSetting } from "./notify";
+import {
+  DEFAULT_NOTIFICATIONS,
+  LANGUAGE_SETTING,
+  LANGUAGES,
+  type Language,
+  type NotificationSetting,
+  serverLanguage,
+} from "./notify";
 import {
   briefInputs,
   dayRange,
@@ -163,6 +170,15 @@ export async function createServer(
     const next: NotificationSetting = { enabled: req.body?.enabled === true };
     setSetting(db, "notifications", next, Date.now());
     return next;
+  });
+
+  // The dashboard's language, so text the server writes itself (notifications) matches it.
+  app.put<{ Body: { lang?: unknown } }>("/v1/settings/language", async (req, reply) => {
+    const lang = req.body?.lang;
+    if (typeof lang !== "string" || !LANGUAGES.includes(lang as Language))
+      return reply.code(400).send({ error: `lang must be one of ${LANGUAGES.join(", ")}` });
+    setSetting(db, LANGUAGE_SETTING, lang, Date.now());
+    return { lang };
   });
 
   // Directories whose files never raise output loops (agent reports, plans). Re-analyzes at once.
@@ -331,6 +347,7 @@ export async function createServer(
     summarizer: getSetting<SummarizerSetting>(db, "summarizer") ?? DEFAULT_SUMMARIZER,
     notifications: getSetting<NotificationSetting>(db, "notifications") ?? DEFAULT_NOTIFICATIONS,
     loopIgnorePaths: loopIgnorePaths(db),
+    language: serverLanguage(db),
     live: opts.live !== undefined,
     privacy: {
       promptText: "not stored",

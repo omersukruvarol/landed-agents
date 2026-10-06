@@ -19,7 +19,14 @@ export {
   resumeContext,
   resumePacket,
 } from "./memory";
-export { createNotifier, DEFAULT_NOTIFICATIONS, type NotificationSetting } from "./notify";
+export {
+  createNotifier,
+  DEFAULT_NOTIFICATIONS,
+  type Language,
+  type NotificationSetting,
+  noticeText,
+  serverLanguage,
+} from "./notify";
 export {
   createServer,
   DEFAULT_PORT,

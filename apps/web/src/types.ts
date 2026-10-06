@@ -201,6 +201,7 @@ export interface Settings {
   summarizer: { enabled: boolean; command: string; args: string[] };
   notifications: { enabled: boolean };
   loopIgnorePaths: string[];
+  language: "en" | "tr";
   live: boolean;
   privacy: Record<string, string>;
 }
@@ -208,5 +209,14 @@ export interface Settings {
 export interface LiveMessage {
   type: "import" | "analysis" | "notice";
   at: string;
-  detail?: { kind?: string; title?: string; message?: string; sessionId?: string; files?: number };
+  detail?: {
+    kind?: string;
+    title?: string;
+    message?: string;
+    sessionId?: string;
+    files?: number;
+    repo?: string;
+    sessionTitle?: string;
+    relPath?: string;
+  };
 }
