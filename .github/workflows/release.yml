@@ -1,9 +1,12 @@
 name: Release
 
-# Publishes `landed-agents` to npm when a version tag (v1.2.3) is pushed.
+# Stages a `landed-agents` release on npm when a version tag (v1.2.3) is pushed. The version goes
+# live only after the owner approves it with 2FA (npmjs.com, or `npm stage approve <id>`), so a
+# compromised CI run alone can never publish.
 # Authentication is npm Trusted Publishing (OIDC): no npm token is stored in this repository.
 # One-time setup on npmjs.com → landed-agents → Settings → Trusted Publisher → GitHub Actions:
 #   organization/user: omersukruvarol · repository: landed-agents · workflow: release.yml
+#   (leave "Allow npm publish" and "Allow npm dist-tag" unchecked: staging is always allowed)
 # npm attaches provenance automatically, so each version links back to the commit it was built from.
 
 on:
@@ -29,8 +32,8 @@ jobs:
           node-version-file: .node-version
           registry-url: https://registry.npmjs.org
 
-      # Trusted publishing needs npm 11.5.1 or newer; Node 22 ships npm 10.
-      - run: npm install -g npm@^11.5.1
+      # `npm stage publish` needs npm 12 (Node 22 ships npm 10).
+      - run: npm install -g npm@^12.2.0
       - run: corepack enable pnpm
       - run: pnpm install --frozen-lockfile
 
@@ -64,10 +67,11 @@ jobs:
           npm install -g --prefix "$prefix" "./landed-agents-${GITHUB_REF_NAME#v}.tgz"
           HOME="$(mktemp -d)" LANDED_DATA_DIR="$(mktemp -d)/data" "$prefix/bin/landed" --version
 
-      - name: Publish to npm
+      - name: Stage on npm (goes live after the owner approves)
         working-directory: apps/cli
         run: |
           version="${GITHUB_REF_NAME#v}"
           # A pre-release (1.2.3-beta.1) goes to the `next` tag, never to `latest`.
           case "$version" in *-*) tag=next ;; *) tag=latest ;; esac
-          npm publish "./landed-agents-$version.tgz" --access public --tag "$tag"
+          npm stage publish "./landed-agents-$version.tgz" --access public --tag "$tag"
+          echo "Staged landed-agents@$version ($tag). Approve it on npmjs.com or with: npm stage list landed-agents" >> "$GITHUB_STEP_SUMMARY"

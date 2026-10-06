@@ -9,7 +9,7 @@ Its only runtime dependencies are `better-sqlite3`, `fastify` and `@fastify/stat
 
 ## How a release works
 
-Releases are published by GitHub Actions (`.github/workflows/release.yml`) when a `v*.*.*` tag is pushed.
+Releases are built and **staged** by GitHub Actions (`.github/workflows/release.yml`) when a `v*.*.*` tag is pushed. A staged version goes live only after the owner approves it with 2FA, so a compromised CI run alone can never publish.
 - **Authentication:** npm Trusted Publishing (OIDC). There is no npm token anywhere in the repository or its secrets.
 - **Provenance:** npm attaches it automatically, so every version on npmjs.com links to the exact commit and workflow run that built it.
 
@@ -23,6 +23,7 @@ This is done by the owner on npmjs.com, under **landed-agents → Settings → T
 | Repository | `landed-agents` |
 | Workflow filename | `release.yml` |
 | Environment | leave empty |
+| Allowed actions | leave **Allow npm publish** and **Allow npm dist-tag** unchecked; staging is always allowed |
 
 After that, consider setting **Publishing access** to "Require two-factor authentication and disallow tokens". Trusted publishing keeps working with that setting.
 
@@ -42,9 +43,21 @@ After that, consider setting **Publishing access** to "Require two-factor authen
    - builds the web UI and CLI;
    - packs the tarball;
    - installs and smokes the tarball;
-   - runs `npm publish` on that exact tarball.
+   - stages that exact tarball with `npm stage publish`.
 
    A pre-release such as `v0.4.0-beta.1` is published under the `next` dist-tag, never `latest`.
+
+5. **Approve the staged version** on npmjs.com, or from a terminal logged in to npm (npm 12 or newer):
+
+   ```bash
+   npm stage list landed-agents
+   ```
+
+   ```bash
+   npm stage approve <stage-id>
+   ```
+
+   Use `npm stage reject <stage-id>` to drop it instead. Only after approval is the version installable.
 
 A published version cannot be removed after 72 hours, and its number can never be reused. Fix mistakes with a new patch version.
 
